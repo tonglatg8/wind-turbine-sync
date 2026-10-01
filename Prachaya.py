@@ -228,7 +228,7 @@ def run_realtime_sync():
             # ลอจิกตัดสินสถานะใหม่:
             # - OFFLINE เมื่อ Power < 10 ร่วมกับ (มีลม >= 3 OR เครื่องไม่พร้อม Avail < 1)
             # - ONLINE เมื่อ Power >= 10 OR (Power < 10 AND Wind < 3 AND Avail >= 1)
-            target_status = "OFFLINE" if (p_val < 10 and (w_val >= 3 or a_val < 1)) else "ONLINE"
+            target_status = "OFFLINE" if (p_val < 2 and (w_val >= 3 or a_val < 1)) else "ONLINE"
             print(f"   - Power: {p_val:.1f} kW | Wind: {w_val:.1f} m/s | Avail: {a_val:.2f}")
             
         print(f"   - Target Status: {target_status}")
