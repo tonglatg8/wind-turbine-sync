@@ -126,7 +126,7 @@ def get_latest_greenbyte_data(device_id):
     headers = {"x-api-key": GREENBYTE_TOKEN, "Content-Type": "application/json"}
     params = {
         "DeviceIds": device_id,
-        "DataSignalIds": "1,5",
+        "DataSignalIds": "1,5,6793",  # เพิ่ม DataSignalId 6793 (Time-based Avail.)
         "TimestampStart": timestamp_start,
         "TimestampEnd": timestamp_end
     }
@@ -197,6 +197,7 @@ def run_realtime_sync():
 
         power_data = {}
         wind_data = {}
+        avail_data = {}
         
         for item in gb_data:
             signal_id = item.get("dataSignal", {}).get("dataSignalId")
@@ -204,22 +205,29 @@ def run_realtime_sync():
                 power_data = item.get("data", {})
             elif signal_id == 1:
                 wind_data = item.get("data", {})
+            elif signal_id == 6793:
+                avail_data = item.get("data", {})
 
         valid_power_ts = sorted([ts for ts, val in power_data.items() if val is not None])
         valid_wind_ts = sorted([ts for ts, val in wind_data.items() if val is not None])
+        valid_avail_ts = sorted([ts for ts, val in avail_data.items() if val is not None])
 
-        if not valid_power_ts or not valid_wind_ts:
+        if not valid_power_ts or not valid_wind_ts or not valid_avail_ts:
             print("   -> Data is null -> Force OFFLINE")
             target_status = "OFFLINE"
-            print("   - Power: N/A | Wind: N/A")
+            print("   - Power: N/A | Wind: N/A | Avail: N/A")
         else:
             latest_p_ts = valid_power_ts[-1]
             latest_w_ts = valid_wind_ts[-1]
+            latest_a_ts = valid_avail_ts[-1]
+
             p_val = float(power_data[latest_p_ts])
             w_val = float(wind_data[latest_w_ts])
+            a_val = float(avail_data[latest_a_ts])
             
-            target_status = "OFFLINE" if (p_val < 10 and w_val >= 3) else "ONLINE"
-            print(f"   - Power: {p_val:.1f} kW | Wind: {w_val:.1f} m/s")
+            # เงื่อนไข OFFLINE ใหม่: Power < 10 และ Wind >= 3 และ Avail < 1
+            target_status = "OFFLINE" if (p_val < 10 and w_val >= 3 and a_val < 1) else "ONLINE"
+            print(f"   - Power: {p_val:.1f} kW | Wind: {w_val:.1f} m/s | Avail: {a_val:.2f}")
             
         print(f"   - Target Status: {target_status}")
         actual_status = get_current_maintainx_status(mx_id)
@@ -234,7 +242,6 @@ def run_realtime_sync():
         print("") 
         time.sleep(0.5)
 
-    # หากการดึงข้อมูลผิดพลาดทั้งหมด 100% (เช่น ปัญหาเครือข่าย/API ล่ม) สั่งแจ้งเตือนทันที
     if error_count == total_turbines:
         print("[CRITICAL ERROR] Failed to fetch data for ALL turbines!")
         sys.exit(1)
