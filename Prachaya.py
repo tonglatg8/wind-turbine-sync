@@ -126,7 +126,7 @@ def get_latest_greenbyte_data(device_id):
     headers = {"x-api-key": GREENBYTE_TOKEN, "Content-Type": "application/json"}
     params = {
         "DeviceIds": device_id,
-        "DataSignalIds": "1,5,6793",  # 1=Wind, 5=Power, 6793=Avail
+        "DataSignalIds": "1,5,80",  # 1=Wind, 5=Power, 80=Blade Angle A
         "TimestampStart": timestamp_start,
         "TimestampEnd": timestamp_end
     }
@@ -197,7 +197,7 @@ def run_realtime_sync():
 
         power_data = {}
         wind_data = {}
-        avail_data = {}
+        pitch_data = {}
         
         for item in gb_data:
             signal_id = item.get("dataSignal", {}).get("dataSignalId")
@@ -205,31 +205,31 @@ def run_realtime_sync():
                 power_data = item.get("data", {})
             elif signal_id == 1:
                 wind_data = item.get("data", {})
-            elif signal_id == 6793:
-                avail_data = item.get("data", {})
+            elif signal_id == 80:
+                pitch_data = item.get("data", {})
 
         valid_power_ts = sorted([ts for ts, val in power_data.items() if val is not None])
         valid_wind_ts = sorted([ts for ts, val in wind_data.items() if val is not None])
-        valid_avail_ts = sorted([ts for ts, val in avail_data.items() if val is not None])
+        valid_pitch_ts = sorted([ts for ts, val in pitch_data.items() if val is not None])
 
-        if not valid_power_ts or not valid_wind_ts or not valid_avail_ts:
+        if not valid_power_ts or not valid_wind_ts or not valid_pitch_ts:
             print("   -> Data is null -> Force OFFLINE")
             target_status = "OFFLINE"
-            print("   - Power: N/A | Wind: N/A | Avail: N/A")
+            print("   - Power: N/A | Wind: N/A | Pitch: N/A")
         else:
             latest_p_ts = valid_power_ts[-1]
             latest_w_ts = valid_wind_ts[-1]
-            latest_a_ts = valid_avail_ts[-1]
+            latest_pitch_ts = valid_pitch_ts[-1]
 
             p_val = float(power_data[latest_p_ts])
             w_val = float(wind_data[latest_w_ts])
-            a_val = float(avail_data[latest_a_ts])
+            pitch_val = float(pitch_data[latest_pitch_ts])
             
             # ลอจิกตัดสินสถานะใหม่:
-            # - OFFLINE เมื่อ Power < 10 ร่วมกับ (มีลม >= 3 OR เครื่องไม่พร้อม Avail < 1)
-            # - ONLINE เมื่อ Power >= 10 OR (Power < 10 AND Wind < 3 AND Avail >= 1)
-            target_status = "OFFLINE" if (p_val < 2 and (w_val >= 3 or a_val < 1)) else "ONLINE"
-            print(f"   - Power: {p_val:.1f} kW | Wind: {w_val:.1f} m/s | Avail: {a_val:.2f}")
+            # - Pitch Angle < 50 deg แสดงถึงใบพัดอยู่ในองศาทำงาน (ONLINE หากลมต่ำและไม่ผลิตไฟ)
+            # - OFFLINE เมื่อ Power < 10 kW ร่วมกับ (Wind >= 3 m/s OR Pitch Angle >= 50 deg)
+            target_status = "OFFLINE" if (p_val < 2 and (w_val >= 3 or pitch_val >= 50)) else "ONLINE"
+            print(f"   - Power: {p_val:.1f} kW | Wind: {w_val:.1f} m/s | Pitch: {pitch_val:.1f}°")
             
         print(f"   - Target Status: {target_status}")
         actual_status = get_current_maintainx_status(mx_id)
