@@ -233,7 +233,7 @@ def run_realtime_sync():
             # ลอจิกตัดสินสถานะ:
             # - Pitch Angle < 50 deg แสดงถึงใบพัดอยู่ในองศาทำงาน (ONLINE หากลมต่ำและไม่ผลิตไฟ)
             # - OFFLINE เมื่อ Power < 10 kW ร่วมกับ (Wind >= 3 m/s OR Pitch Angle >= 50 deg)
-            target_status = "OFFLINE" if (p_val < 10 and (w_val >= 3 or pitch_val >= 50)) else "ONLINE"
+            target_status = "OFFLINE" if (p_val < 2 and (w_val > 3 or pitch_val >= 50)) else "ONLINE"
             print(f"   - Power: {p_val:.1f} kW | Wind: {w_val:.1f} m/s | Pitch: {pitch_val:.1f}°")
             
         print(f"   - Target Status: {target_status}")
