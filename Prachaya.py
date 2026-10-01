@@ -2,7 +2,12 @@ import os
 import sys
 import requests
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+# ---------------------------------------------------------
+# กำหนด Timezone เวลาประเทศไทย (UTC+7)
+# ---------------------------------------------------------
+THAI_TZ = timezone(timedelta(hours=7))
 
 # ---------------------------------------------------------
 # 1. ตั้งค่า Configuration (ดึงค่าปลอดภัยผ่าน GitHub Secrets)
@@ -116,7 +121,7 @@ TURBINE_MAPPING = {
 # 2. ฟังก์ชันเรียก API
 # ---------------------------------------------------------
 def get_latest_greenbyte_data(device_id):
-    now = datetime.now()
+    now = datetime.now(THAI_TZ)
     past_30_mins = now - timedelta(minutes=30)
     
     timestamp_start = past_30_mins.strftime("%Y-%m-%dT%H:%M:%S")
@@ -173,7 +178,7 @@ def switch_maintainx_realtime(asset_id, status_name):
 # 3. ลอจิกหลัก (ตรวจสอบกังหัน 1 รอบ)
 # ---------------------------------------------------------
 def run_realtime_sync():
-    print(f"\n=== Start Check: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===")
+    print(f"\n=== Start Check: {datetime.now(THAI_TZ).strftime('%Y-%m-%d %H:%M:%S')} (TH Local Time) ===")
     
     error_count = 0
     total_turbines = len(TURBINE_MAPPING)
@@ -225,10 +230,10 @@ def run_realtime_sync():
             w_val = float(wind_data[latest_w_ts])
             pitch_val = float(pitch_data[latest_pitch_ts])
             
-            # ลอจิกตัดสินสถานะใหม่:
+            # ลอจิกตัดสินสถานะ:
             # - Pitch Angle < 50 deg แสดงถึงใบพัดอยู่ในองศาทำงาน (ONLINE หากลมต่ำและไม่ผลิตไฟ)
             # - OFFLINE เมื่อ Power < 10 kW ร่วมกับ (Wind >= 3 m/s OR Pitch Angle >= 50 deg)
-            target_status = "OFFLINE" if (p_val < 2 and (w_val >= 3 or pitch_val >= 50)) else "ONLINE"
+            target_status = "OFFLINE" if (p_val < 10 and (w_val >= 3 or pitch_val >= 50)) else "ONLINE"
             print(f"   - Power: {p_val:.1f} kW | Wind: {w_val:.1f} m/s | Pitch: {pitch_val:.1f}°")
             
         print(f"   - Target Status: {target_status}")
