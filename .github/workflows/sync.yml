@@ -29,19 +29,19 @@ jobs:
           MAINTAINX_TOKEN: ${{ secrets.MAINTAINX_TOKEN }}
         run: python Prachaya.py
 
-      # ส่งอีเมลผ่าน Outlook / Office 365 SMTP Server
+      # ส่งอีเมลผ่าน Gmail SMTP (ใช้ Gmail App Password 16 หลัก)
       - name: Send mail on failure
         if: failure()
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp.office365.com
-          server_port: 587
-          secure: false
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
           subject: ⚠️ [ALERT] Wind Turbine Sync Script Failed!
-          to: prachaya@windenergyholding.com, amata@windenergyholding.com, sanpetch@windenergyholding.com
-          from: GitHub Actions Alert <prachaya@windenergyholding.com>
+          to: prachaya@windenergyholding.com,amata@windenergyholding.com,sanpetch@windenergyholding.com
+          from: Wind Turbine Bot <${{ secrets.MAIL_USERNAME }}>
           body: |
-            ระบบตรวจเช็กกังหันลม (Prachaya.py) เกิดข้อผิดพลาดวิกฤตนะจ๊ะ
+            ระบบตรวจเช็กกังหันลม (Prachaya.py) เกิดข้อผิดพลาดวิกฤต!
             กรุณาตรวจสอบ Log บน GitHub Actions ทันที
