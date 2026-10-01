@@ -2,9 +2,8 @@ name: Run Wind Turbine Sync
 
 on:
   schedule:
-    # รันอัตโนมัติทุกๆ 10 นาที
     - cron: '*/10 * * * *'
-  workflow_dispatch: # ปุ่มสำหรับกดรันด้วยตนเองผ่านหน้าเว็บ
+  workflow_dispatch:
 
 jobs:
   sync-job:
@@ -25,4 +24,7 @@ jobs:
           pip install requests
 
       - name: Run Prachaya.py Script
+        env:
+          GREENBYTE_TOKEN: ${{ secrets.GREENBYTE_TOKEN }}
+          MAINTAINX_TOKEN: ${{ secrets.MAINTAINX_TOKEN }}
         run: python Prachaya.py
