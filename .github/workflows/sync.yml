@@ -43,5 +43,5 @@ jobs:
           to: prachaya@windenergyholding.com,amata@windenergyholding.com,sanpetch@windenergyholding.com
           from: Wind Turbine Bot <${{ secrets.MAIL_USERNAME }}>
           body: |
-            ระบบตรวจเช็กกังหันลม (Prachaya.py) เกิดข้อผิดพลาดวิกฤต!
+            ระบบตรวจเช็กกังหันลม (Prachaya.py) เกิดข้อผิดพลาดนะจ๊ะ
             กรุณาตรวจสอบ Log บน GitHub Actions ทันที
