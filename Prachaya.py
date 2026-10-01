@@ -1,13 +1,19 @@
 import os
+import sys
 import requests
 import time
 from datetime import datetime, timedelta
 
 # ---------------------------------------------------------
-# 1. ตั้งค่า Configuration 
+# 1. ตั้งค่า Configuration (ดึงค่าปลอดภัยผ่าน GitHub Secrets)
 # ---------------------------------------------------------
 GREENBYTE_TOKEN = os.getenv("GREENBYTE_TOKEN")
 MAINTAINX_TOKEN = os.getenv("MAINTAINX_TOKEN")
+
+# ตรวจสอบว่ามี API Token หรือไม่ ถ้าไม่มีให้หยุดรันและแจ้ง Error ทันที
+if not GREENBYTE_TOKEN or not MAINTAINX_TOKEN:
+    print("[CRITICAL ERROR] Missing GREENBYTE_TOKEN or MAINTAINX_TOKEN in Secrets!")
+    sys.exit(1)
 
 # ข้อมูลจับคู่ กังหันทั้งหมด 90 ต้น (FKW 45 ต้น + KR2 45 ต้น)
 TURBINE_MAPPING = {
@@ -129,8 +135,11 @@ def get_latest_greenbyte_data(device_id):
         res = requests.get(url, headers=headers, params=params, timeout=10)
         if res.status_code == 200:
             return res.json()
+        elif res.status_code in [401, 403]:
+            print(f"   [CRITICAL ERROR] Greenbyte API Unauthorized (Status {res.status_code})")
+            return "AUTH_ERROR"
     except Exception as e:
-        print(f"   [Error] Greenbyte: {e}")
+        print(f"   [Error] Greenbyte Connection failed: {e}")
     return None
 
 def get_current_maintainx_status(asset_id):
@@ -161,10 +170,13 @@ def switch_maintainx_realtime(asset_id, status_name):
         pass
 
 # ---------------------------------------------------------
-# 3. ลอจิกหลัก (ตรวจสอบกังหัน 1 รอบแล้วจบ)
+# 3. ลอจิกหลัก (ตรวจสอบกังหัน 1 รอบ)
 # ---------------------------------------------------------
 def run_realtime_sync():
     print(f"\n=== Start Check: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===")
+    
+    error_count = 0
+    total_turbines = len(TURBINE_MAPPING)
     
     for gb_id, info in TURBINE_MAPPING.items():
         turbine_name = info["name"]
@@ -173,8 +185,14 @@ def run_realtime_sync():
         print(f"--- Turbine {turbine_name} [GB: {gb_id} | MX: {mx_id}] ---")
         
         gb_data = get_latest_greenbyte_data(gb_id)
+        
+        if gb_data == "AUTH_ERROR":
+            print("[CRITICAL] Greenbyte Token Invalid! Stopping script...")
+            sys.exit(1)
+            
         if gb_data is None: 
             print("   -> Connection error, skip...\n")
+            error_count += 1
             continue
 
         power_data = {}
@@ -215,6 +233,11 @@ def run_realtime_sync():
         
         print("") 
         time.sleep(0.5)
+
+    # หากการดึงข้อมูลผิดพลาดทั้งหมด 100% (เช่น ปัญหาเครือข่าย/API ล่ม) สั่งแจ้งเตือนทันที
+    if error_count == total_turbines:
+        print("[CRITICAL ERROR] Failed to fetch data for ALL turbines!")
+        sys.exit(1)
 
 if __name__ == "__main__":
     print(f"=== Auto-Sync Start for {len(TURBINE_MAPPING)} Turbines ===")
