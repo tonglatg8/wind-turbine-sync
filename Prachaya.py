@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 # ---------------------------------------------------------
 # 1. ตั้งค่า Configuration 
 # ---------------------------------------------------------
-GREENBYTE_TOKEN = os.getenv("GREENBYTE_TOKEN", "d47c2428b1ecec6938b4d053ac3985dd")
-MAINTAINX_TOKEN = os.getenv("MAINTAINX_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE0NjYyNjYsIm9yZ2FuaXphdGlvbklkIjo1NTY3MjYsImlhdCI6MTc5MDI2ODkxOCwic3ViIjoiUkVTVF9BUElfQVVUSCIsImp0aSI6IjBlNjAxZDRkLWNiZGQtNDdiMS05OTE0LTQ5YmZkOWY5Mjk0OSJ9.VuBKA8q2Dr15StB-TT_qYVWvc3mdT5lVmCucqMvRhjk")
+GREENBYTE_TOKEN = os.getenv("GREENBYTE_TOKEN")
+MAINTAINX_TOKEN = os.getenv("MAINTAINX_TOKEN")
 
 # ข้อมูลจับคู่ กังหันทั้งหมด 90 ต้น (FKW 45 ต้น + KR2 45 ต้น)
 TURBINE_MAPPING = {
